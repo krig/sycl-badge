@@ -253,6 +253,30 @@ fn draw_player() void {
     }
 }
 
+// Enemies spawn in waves
+// Increase level = more enemies in wave, faster enemies
+// X number of enemy types, harder enemies shoot back
+// enemies move in sin waves
+
+const EnemyType = enum {
+    blobby,
+    forky,
+};
+
+const Enemy = struct {
+    typ: EnemyType,
+    x: f32,
+    y: f32,
+    speed: f32,
+    cooldown: u8,
+    live: bool,
+};
+
+var level: u8 = 0;
+var levelTime: u16 = 0;
+const MaxEnemies = 8;
+var enemies: [MaxEnemies]Enemy = undefined;
+
 fn draw_enemies() void {
 }
 
@@ -260,12 +284,7 @@ const bannerText = "krig @ sycl 2024";
 const bannerWidth = cart.font_width * bannerText.len;
 var bannerPos: f32 = cart.screen_width / 2;
 
-export fn update() void {
-    set_background();
-    draw_stars();
-    draw_bullets();
-    draw_enemies();
-    draw_player();
+fn draw_banner() void {
     cart.text(.{
         .str = bannerText,
         .x = @intFromFloat(bannerPos),
@@ -275,6 +294,15 @@ export fn update() void {
     bannerPos -= 0.233;
     if (bannerPos < -@as(f32, @floatFromInt(bannerWidth)))
         bannerPos = cart.screen_width;
+}
+
+export fn update() void {
+    set_background();
+    draw_stars();
+    draw_bullets();
+    draw_enemies();
+    draw_player();
+    draw_banner();
 }
 
 fn set_background() void {
