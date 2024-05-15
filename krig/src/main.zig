@@ -2,6 +2,7 @@ const std = @import("std");
 const fmt = std.fmt;
 const cart = @import("cart-api");
 
+const GameScaler: f32 = 1.0;
 
 const black = defColor(0x000000);
 const white = defColor(0xffffff);
@@ -66,7 +67,7 @@ fn rand_float() f32 {
     return @as(f32, @floatFromInt(rand_seed)) / @as(f32, std.math.maxInt(u16)); 
 }
 
-const NumStars = 18;
+const NumStars = 12;
 var starfield: [NumStars]Star = undefined;
 
 const Player = struct {
@@ -95,7 +96,7 @@ const Bullet = struct {
     typ: BulletType,
     live: bool,
 };
-const MaxBullets = 16;
+const MaxBullets = 8;
 var bullets: [MaxBullets]Bullet = undefined;
 
 export fn start() void {
@@ -355,7 +356,7 @@ fn level_cleared() bool {
 
 fn tick_enemies() void {
     levelTime += 1;
-    if (levelTime > 1200 and level_cleared()) {
+    if (levelTime > 100 and level_cleared()) {
         levelTime = 0;
         level += 1;
         shouldSpawn = @min(level, MaxEnemies);
@@ -439,11 +440,24 @@ fn draw_enemies() void {
         if (enemy.state == .live) {
             cart.rect(.{
                 .x = @intFromFloat(enemy.x - EnemyWidth/2),
+                .y = @intFromFloat(enemy.y + EnemyWidth/2),
+                .width = EnemyWidth + 1,
+                .height = 2,
+                .fill_color = rgb565(ziggy6),
+            });
+            cart.rect(.{
+                .x = @intFromFloat(enemy.x - EnemyWidth/2),
                 .y = @intFromFloat(enemy.y - EnemyWidth/2),
-                .width = EnemyWidth,
-                .height = EnemyWidth,
-                .fill_color = rgb565(blue),
-                .stroke_color = null,
+                .width = EnemyWidth + 1,
+                .height = 2,
+                .fill_color = rgb565(ziggy6),
+            });
+            cart.oval(.{
+                .x = @intFromFloat(enemy.x - 3),
+                .y = @intFromFloat(enemy.y - 3),
+                .width = 7,
+                .height = 8,
+                .fill_color = rgb565(ziggy6),
             });
         }
     }
