@@ -61,13 +61,18 @@ pub fn build(b: *Build) void {
     feature_test_cart.install(b);
     const watch_run_step = feature_test_cart.install_with_watcher(&dep, b, .{});
 
-    const zeroman_cart = add_cart(&dep, b, .{
-        .name = "zeroman",
-        .optimize = optimize,
-        .root_source_file = .{ .path = "samples/zeroman/main.zig" },
-    });
-    add_zeroman_assets_step(b, zeroman_cart);
-    zeroman_cart.install(b);
+    {
+        const zeroman_cart = add_cart(&dep, b, .{
+            .name = "zeroman",
+            .optimize = optimize,
+            .root_source_file = .{ .path = "samples/zeroman/main.zig" },
+        });
+        add_zeroman_assets_step(b, zeroman_cart);
+        zeroman_cart.install(b);
+        b.step("watch-zeroman", "Watch/run zeroman in the simulator").dependOn(
+            &zeroman_cart.install_with_watcher(&dep, b, .{}).step
+        );
+    }
 
     {
         const cart = add_cart(&dep, b, .{
