@@ -2,7 +2,6 @@ const std = @import("std");
 const fmt = std.fmt;
 const cart = @import("cart-api");
 
-export fn start() void {}
 
 const black = defColor(0x000000);
 const white = defColor(0xffffff);
@@ -29,6 +28,14 @@ inline fn defColor(rgb: u24) cart.NeopixelColor {
     };
 }
 
+inline fn blend(from: cart.NeopixelColor, to: cart.NeopixelColor, f: f32) cart.NeopixelColor {
+    return .{
+        .r = @intFromFloat((from.r * (1.0 - f)) + (to.r * f)),
+        .g = @intFromFloat((from.g * (1.0 - f)) + (to.g * f)),
+        .b = @intFromFloat((from.b * (1.0 - f)) + (to.b * f)),
+    };
+}
+
 inline fn rgb565(clr: cart.NeopixelColor) cart.DisplayColor {
     return .{
         .r = @intCast(clr.r / 8),
@@ -37,35 +44,41 @@ inline fn rgb565(clr: cart.NeopixelColor) cart.DisplayColor {
     };
 }
 
-var ticks: u8 = 0;
+const numLines = 8;
+var lines: [numLines]f32 = undefined;
+var lineColor: [numLines]cart.NeopixelColor = undefined;
+
+export fn start() void {
+    for (lines, 0..) |_, i| {
+        const v = @as(f32, @floatFromInt(i)) / numLines;
+        lines[i] = v;
+        lineColor[i] = blend(black, zig, 0.2 + v*0.8);
+    }
+}
 
 export fn update() void {
     set_background();
 
-    cart.rect(.{
-        .x = @intCast(cart.screen_width / 2 - 50),
-        .y = @intCast(cart.screen_height / 2 - 25),
-        .width = 100,
-        .height = 50,
-        .stroke_color = rgb565(ziggy8),
-        .fill_color = rgb565(zig),
-    });
+    const half_h: u8 = @intCast(cart.screen_height / 2);
 
-    const slowTick: u8 = @intCast(ticks / 4);
-
-    var buf: [32]u8 = undefined;
-    _ = fmt.bufPrint(&buf, "{d}\n", .{slowTick}) catch "err";
-
-    cart.text(.{
-        .str = &buf,
-        .x = 4,
-        .y = 4,
-        .text_color = rgb565(white),
-    });
+    const speed: f32 = 0.008;
+    for (lines, 0..) |life, i| {
+        var newlife = life + speed;
+        if (newlife >= 1.0) newlife = 0.0;
+        const iclr: u8 = @intFromFloat(newlife * numLines);
+        const ipos: u32 = @intFromFloat((newlife*newlife) * half_h);
+        const drawpos: u8 = @intCast(ipos % @as(u32, half_h));
+        cart.line(.{
+            .x1 = 0,
+            .y1 = @intCast(half_h + drawpos),
+            .x2 = cart.screen_width - 1,
+            .y2 = @intCast(half_h + drawpos),
+            .color = rgb565(lineColor[iclr]),
+        });
+        lines[i] = newlife;
+    }
 
     cart.red_led.* = !cart.red_led.*;
-
-    ticks +%= 1;
 }
 
 fn set_background() void {
