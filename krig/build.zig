@@ -4,7 +4,7 @@ const badge = @import("sycl-badge");
 pub fn build(b: *std.Build) void {
     const dep = b.dependency("sycl-badge", .{});
     const feature_test_cart = badge.add_cart(dep, b, .{
-        .name = "hello",
+        .name = "krig",
         .optimize = .ReleaseSmall,
         .root_source_file = .{ .path = "src/main.zig" },
     });

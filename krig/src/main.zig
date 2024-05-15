@@ -12,18 +12,6 @@ export fn update() void {
     }
 }
 
-const lines = &[_][]const u8{
-    "kristoffer",
-    "@krig",
-    "",
-    "",
-    "",
-    "",
-    "sycl24",
-    "(start)",
-};
-const spacing = (cart.font_height * 4 / 3);
-
 var ticks: u8 = 0;
 
 fn scene_intro() void {
@@ -44,17 +32,14 @@ fn scene_intro() void {
         });
     }
 
-    const y_start = (cart.screen_height - (cart.font_height + spacing * (lines.len - 1))) / 2;
-
-    // Write it out!
-    for (lines, 0..) |line, i| {
-        cart.text(.{
-            .text_color = .{ .r = 31, .g = 63, .b = 31 },
-            .str = line,
-            .x = @intCast((cart.screen_width - cart.font_width * line.len) / 2),
-            .y = @intCast(y_start + spacing * i),
-        });
-    }
+    cart.rect(.{
+        .x = @intCast(cart.screen_width - 50),
+        .y = @intCast(cart.screen_height - 25),
+        .width = 100,
+        .height = 50,
+        .stroke_color = .{ .r = 0, .g = 20, .b = 31 },
+        .fill_color = .{ .r = 31, .g = 30, .b = 4 },
+    });
 
     if (ticks == 0) cart.red_led.* = !cart.red_led.*;
     if (cart.controls.start) scene = .game;
