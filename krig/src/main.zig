@@ -5,6 +5,21 @@ export fn start() void {}
 
 var scene: enum { intro, game } = .intro;
 
+const black: cart.DisplayColor = .{ .r = 0, .g = 0, .b = 0 };
+const white: cart.DisplayColor = .{ .r = 31, .g = 63, .b = 31 };
+const zig: cart.DisplayColor = rgbColor(0xF7A41D);
+const red: cart.DisplayColor = rgbColor(0xFF0000);
+const green: cart.DisplayColor = rgbColor(0x00FF00);
+const blue: cart.DisplayColor = rgbColor(0x0000FF);
+
+inline fn rgbColor(rgb: u24) cart.DisplayColor {
+    return .{
+        .r = @intCast(((rgb >> 16) & 0xff) / 8),
+        .g = @intCast(((rgb >> 8) & 0xff) / 4),
+        .b = @intCast((rgb & 0xff) / 8),
+    };
+}
+
 export fn update() void {
     switch (scene) {
         .intro => scene_intro(),
@@ -33,12 +48,12 @@ fn scene_intro() void {
     }
 
     cart.rect(.{
-        .x = @intCast(cart.screen_width - 50),
-        .y = @intCast(cart.screen_height - 25),
+        .x = @intCast(cart.screen_width / 2 - 50),
+        .y = @intCast(cart.screen_height / 2 - 25),
         .width = 100,
         .height = 50,
-        .stroke_color = .{ .r = 0, .g = 20, .b = 31 },
-        .fill_color = .{ .r = 31, .g = 30, .b = 4 },
+        .stroke_color = black,
+        .fill_color = zig,
     });
 
     if (ticks == 0) cart.red_led.* = !cart.red_led.*;
