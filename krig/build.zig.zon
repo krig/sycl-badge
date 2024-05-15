@@ -1,0 +1,14 @@
+.{
+    .name = "sycl-badge-krig",
+    .version = "0.0.1",
+    .paths = .{
+        "main.zig",
+        "build.zig",
+    },
+
+    .dependencies = .{
+        .@"sycl-badge" = .{
+            .path = "..",
+        },
+    },
+}
