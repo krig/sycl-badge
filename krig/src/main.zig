@@ -256,6 +256,10 @@ fn draw_player() void {
 fn draw_enemies() void {
 }
 
+const bannerText = "krig @ sycl 2024";
+const bannerWidth = cart.font_width * bannerText.len;
+var bannerPos: f32 = cart.screen_width / 2;
+
 export fn update() void {
     set_background();
     draw_stars();
@@ -263,19 +267,16 @@ export fn update() void {
     draw_enemies();
     draw_player();
     cart.text(.{
-        .str = "@krig",
-        .x = (cart.screen_width - cart.font_width * 5) / 2,
+        .str = bannerText,
+        .x = @intFromFloat(bannerPos),
         .y = cart.screen_height - 12,
         .text_color = rgb565(ziggy4),
     });
+    bannerPos -= 0.233;
+    if (bannerPos < -@as(f32, @floatFromInt(bannerWidth)))
+        bannerPos = cart.screen_width;
 }
 
 fn set_background() void {
-    const ratio = (4095 - @as(f32, @floatFromInt(cart.light_level.*))) / 4095 * 0.1;
-
-    @memset(cart.framebuffer, cart.DisplayColor{
-        .r = @intFromFloat(ratio * 31),
-        .g = @intFromFloat(ratio * 63),
-        .b = @intFromFloat(ratio * 31),
-    });
+    @memset(cart.framebuffer, rgb565(black));
 }
