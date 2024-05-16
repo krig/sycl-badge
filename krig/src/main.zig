@@ -467,7 +467,7 @@ fn tick_enemies() void {
 }
 
 fn draw_enemies() void {
-    for (enemies) |enemy| {
+    for (&enemies) |*enemy| {
         if (enemy.state == .dead) continue;
         if (enemy.state == .dying) {
             const hw: f32 = @as(f32, @floatFromInt(enemy.cooldown * 2)) * 0.5;
@@ -486,7 +486,6 @@ fn draw_enemies() void {
                 .y = @intFromFloat(enemy.y + EnemyWidth/2),
                 .width = EnemyWidth + 1,
                 .height = 2,
-                .stroke_color = rgb565(ziggy6),
                 .fill_color = rgb565(ziggy6),
             });
             cart.rect(.{
@@ -494,7 +493,6 @@ fn draw_enemies() void {
                 .y = @intFromFloat(enemy.y - EnemyWidth/2),
                 .width = EnemyWidth + 1,
                 .height = 2,
-                .stroke_color = rgb565(ziggy6),
                 .fill_color = rgb565(ziggy6),
             });
             cart.oval(.{
@@ -502,7 +500,6 @@ fn draw_enemies() void {
                 .y = @intFromFloat(enemy.y - 3),
                 .width = 7,
                 .height = 8,
-                .stroke_color = rgb565(ziggy6),
                 .fill_color = rgb565(ziggy6),
             });
         }
