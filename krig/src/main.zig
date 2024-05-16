@@ -677,5 +677,5 @@ fn draw_game() void {
 }
 
 fn set_background() void {
-//    @memset(cart.framebuffer, rgb565(black));
+    @memset(cart.framebuffer, rgb565(black));
 }
