@@ -135,10 +135,22 @@ fn draw_stars() void {
     }
 }
 
+fn noisy(freq: f32, len: f32, vol: u8, channel: u8) void {
+    cart.tone(.{
+        .frequency = @intFromFloat(freq + 0.5),
+        .duration = @intFromFloat(@max(len - 0.04, 0.0) * 60),
+        .volume = vol,
+        .flags = .{
+            .channel = @enumFromInt(channel),
+        },
+    });
+}
+
 fn spawn_bullet(bullet: Bullet) void {
     for (&bullets) |*b| {
         if (b.live) continue;
         b.* = bullet;
+        noisy(880.0, 0.1, 100, 0);
         break;
     }
 }
@@ -400,6 +412,7 @@ fn tick_enemies() void {
                             enemy.*.state = .dying;
                             enemy.cooldown = 1;
                             player.score += 1;
+                            noisy(440.0, 0.2, 100, 3);
                             continue;
                         }
                     }
@@ -413,6 +426,9 @@ fn tick_enemies() void {
                     if (player.health > 0) {
                         player.health -= 1;
                         player.score = 0;
+                        noisy(220.0, 0.2, 80, 1);
+                    } else {
+                        noisy(440.0, 0.2, 100, 3);
                     }
                 }
             }
