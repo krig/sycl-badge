@@ -188,6 +188,7 @@ fn draw_bullets() void {
                     .y = @intFromFloat(bullet.y),
                     .width = 2,
                     .height = 2,
+                    .stroke_color = rgb565(white),
                     .fill_color = rgb565(white),
                 });
             } else {
@@ -235,6 +236,7 @@ fn draw_player() void {
             .y = @intFromFloat(player.y),
             .width = 8,
             .height = 2,
+            .stroke_color = rgb565(shipBottom),
             .fill_color = rgb565(shipBottom),
         });
         cart.hline(.{
@@ -255,6 +257,7 @@ fn draw_player() void {
             .y = @intFromFloat(player.y),
             .width = 8,
             .height = 2,
+            .stroke_color = rgb565(shipTop),
             .fill_color = rgb565(shipTop),
         });
         cart.hline(.{
@@ -450,6 +453,7 @@ fn draw_enemies() void {
                 .y = @intFromFloat(enemy.y - hw),
                 .width = enemy.cooldown,
                 .height = enemy.cooldown,
+                .stroke_color = rgb565(white),
                 .fill_color = rgb565(white),
             });
         }
@@ -459,6 +463,7 @@ fn draw_enemies() void {
                 .y = @intFromFloat(enemy.y + EnemyWidth/2),
                 .width = EnemyWidth + 1,
                 .height = 2,
+                .stroke_color = rgb565(ziggy6),
                 .fill_color = rgb565(ziggy6),
             });
             cart.rect(.{
@@ -466,6 +471,7 @@ fn draw_enemies() void {
                 .y = @intFromFloat(enemy.y - EnemyWidth/2),
                 .width = EnemyWidth + 1,
                 .height = 2,
+                .stroke_color = rgb565(ziggy6),
                 .fill_color = rgb565(ziggy6),
             });
             cart.oval(.{
@@ -473,6 +479,7 @@ fn draw_enemies() void {
                 .y = @intFromFloat(enemy.y - 3),
                 .width = 7,
                 .height = 8,
+                .stroke_color = rgb565(ziggy6),
                 .fill_color = rgb565(ziggy6),
             });
         }
