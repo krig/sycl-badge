@@ -9,8 +9,8 @@ const white = defColor(0xffffff);
 const zig = defColor(0xF7A41D);
 const red = defColor(0xF82828);
 const green = defColor(0x00FF00);
-const dark_red = defColor(0x7f0000);
-const dark_green = defColor(0x007f00);
+const dark_red = defColor(0x010000);
+const dark_green = defColor(0x000100);
 const blue = defColor(0x0000FF);
 const ziggy1 = defColor(0xf98a31);
 const ziggy3 = defColor(0xe56c2c);
@@ -61,10 +61,19 @@ const Star = struct {
     color: cart.DisplayColor,
 };
 
-var rand_seed: u16 = 5381;
+var rand: std.rand.DefaultPrng = undefined;
 fn rand_float() f32 {
-    rand_seed = std.math.rotl(u16, rand_seed, 5) +% rand_seed;
-    return @as(f32, @floatFromInt(rand_seed)) / @as(f32, std.math.maxInt(u16)); 
+    const byte_count = 2;
+    const UInt = @Type(std.builtin.Type{
+        .Int = .{
+            .signedness = .unsigned,
+            .bits = byte_count * 8,
+        },
+    });
+    var buf: [byte_count]u8 = undefined;
+    rand.fill(&buf);
+    const r = std.mem.readInt(UInt, &buf, .big);
+    return @as(f32, @floatFromInt(r)) / (@as(f32, 1.0) + @as(f32, std.math.maxInt(UInt)));
 }
 
 const NumStars = 12;
@@ -100,6 +109,7 @@ const MaxBullets = 8;
 var bullets: [MaxBullets]Bullet = undefined;
 
 export fn start() void {
+    rand = std.rand.DefaultPrng.init(5831);
     for (&starfield) |*star| {
         const speed = rand_float();
         star.* = .{
@@ -120,6 +130,14 @@ export fn start() void {
     };
 }
 
+fn tick_stars() void {
+    for (&starfield) |*star| {
+        var x = star.*.x - star.*.speed * 2.0;
+        if (x < 0.0) x = @floatFromInt(cart.screen_width);
+        star.*.x = x;
+    }
+}
+
 fn draw_stars() void {
     const shaky = (player.y / cart.screen_height) * -15.0;
     for (&starfield) |*star| {
@@ -129,9 +147,6 @@ fn draw_stars() void {
             .len = @intFromFloat(star.*.speed * 4.0 + 1.0),
             .color = star.*.color,
         });
-        var x = star.*.x - star.*.speed * 2.0;
-        if (x < 0.0) x = @floatFromInt(cart.screen_width);
-        star.*.x = x;
     }
 }
 
@@ -155,7 +170,7 @@ fn spawn_bullet(bullet: Bullet) void {
     }
 }
 
-fn draw_bullets() void {
+fn tick_bullets() void {
     // move all live bullets
     // if player is firing: spawn new bullet
     if (cart.controls.a) {
@@ -181,35 +196,39 @@ fn draw_bullets() void {
         if (bullet.y > cart.screen_height) bullet.*.live = false;
         if (bullet.x < 0) bullet.*.live = false;
         if (bullet.y < 0) bullet.*.live = false;
-        if (bullet.live) {
-            if (bullet.typ == .dot) {
-                cart.rect(.{
-                    .x = @intFromFloat(bullet.x),
-                    .y = @intFromFloat(bullet.y),
-                    .width = 2,
-                    .height = 2,
-                    .stroke_color = rgb565(white),
-                    .fill_color = rgb565(white),
-                });
-            } else {
-                cart.hline(.{
-                    .x = @intFromFloat(bullet.x - 1),
-                    .y = @intFromFloat(bullet.y),
-                    .len = 3,
-                    .color = rgb565(white),
-                });
-                cart.vline(.{
-                    .x = @intFromFloat(bullet.x),
-                    .y = @intFromFloat(bullet.y - 1),
-                    .len = 3,
-                    .color = rgb565(white),
-                });
-            }
+    }
+}
+
+fn draw_bullets() void {
+    for (&bullets) |*bullet| {
+        if (!bullet.live) continue;
+        if (bullet.typ == .dot) {
+            cart.rect(.{
+                .x = @intFromFloat(bullet.x),
+                .y = @intFromFloat(bullet.y),
+                .width = 2,
+                .height = 2,
+                .stroke_color = rgb565(white),
+                .fill_color = rgb565(white),
+            });
+        } else {
+            cart.hline(.{
+                .x = @intFromFloat(bullet.x - 1),
+                .y = @intFromFloat(bullet.y),
+                .len = 3,
+                .color = rgb565(white),
+            });
+            cart.vline(.{
+                .x = @intFromFloat(bullet.x),
+                .y = @intFromFloat(bullet.y - 1),
+                .len = 3,
+                .color = rgb565(white),
+            });
         }
     }
 }
 
-fn draw_player() void {
+fn tick_player() void {
     if (cart.controls.up) {
         player.speed = @max(-3.0, player.speed - 0.2);
     }
@@ -219,7 +238,6 @@ fn draw_player() void {
     if (!cart.controls.up and !cart.controls.down) {
         player.speed = player.speed * 0.66;
     }
-    const speed = player.speed;
     player.y = player.y + player.speed;
     if (player.y < 8.0) {
         player.y = 8.0;
@@ -229,6 +247,10 @@ fn draw_player() void {
         player.y = @as(f32, cart.screen_height) - 8.0;
         player.speed = 0.0;
     }
+}
+
+fn draw_player() void {
+    const speed = player.speed;
     const xpos: i32 = @intFromFloat(player.x - @as(f32, @floatFromInt(player.cooldown)) * 0.5);
     if (speed < -0.1) {
         cart.rect(.{
@@ -300,7 +322,7 @@ fn draw_player() void {
     // draw health with neopixels
     for (cart.neopixels, 0..) |*np, i| {
         if (player.health > i) {
-            np.* = black;
+            np.* = dark_green;
         } else {
             np.* = dark_red;
         }
@@ -525,13 +547,128 @@ fn draw_banner() void {
         bannerPos = cart.screen_width;
 }
 
-export fn update() void {
-    set_background();
-    if (player.health == 0) {
-        reset_game();
+const GameState = enum {
+    intro,
+    game,
+    game_over,
+};
+var gameState: GameState = .intro;
+
+const introText = &[_][]const u8{
+    "KRISTOFFER",
+    "GRONLUND",
+    "",
+    "@krig",
+    "",
+    "PRESS START",
+};
+const spacing = (cart.font_height * 4 / 3);
+var shakex: [introText.len]i32 = .{0} ** introText.len;
+var shakey: [introText.len]i32 = .{0} ** introText.len;
+
+fn draw_intro_text() void {
+    const y_start = (cart.screen_height - (cart.font_height + spacing * (introText.len - 1))) / 2;
+    if (rand_float() < 0.1) {
+        for (shakex, 0..) |_, i| {
+            shakex[i] = @intFromFloat(rand_float() * 8.0);
+            shakey[i] = @intFromFloat(rand_float() * 4.0);
+        }
     }
-    draw_stars();
+    for (introText, 0..) |line, i| {
+        const flicker = rand_float() < 0.2;
+        if (!flicker) {
+            cart.text(.{
+                .str = line,
+                .x = @as(i32, @intCast((cart.screen_width - cart.font_width * line.len) / 2)) + shakex[i],
+                .y = @as(i32, @intCast(y_start + spacing * i)) + shakey[i],
+                .text_color = rgb565(zig),
+            });
+        }
+    }
+}
+
+var stateTick: u16 = 0;
+
+export fn update() void {
+    if (stateTick > 1000) stateTick = 100;
+    stateTick +%= 1;
+    if (gameState == .intro) {
+        set_background();
+        tick_stars();
+        tick_stars();
+        draw_stars();
+        draw_intro_text();
+        if (stateTick > 50 and cart.controls.start) {
+            gameState = .game;
+            stateTick = 0;
+        }
+        for (cart.neopixels) |*np| {
+            if (rand_float() > 0.8) {
+                np.* = black;
+            } else if (rand_float() > 0.98) {
+                np.* = blend(black, zig, 0.05);
+            } else if (rand_float() > 0.8) {
+                np.* = blend(black, dark_red, 0.05);
+            }
+        }
+    } else if (gameState == .game_over) {
+        set_background();
+        tick_stars();
+        tick_stars();
+        draw_stars();
+        const gameOver = "GAME OVER";
+        if (rand_float() < 0.8) {
+            cart.text(.{
+                .str = gameOver,
+                .x = (cart.screen_width - gameOver.len * cart.font_width)/2,
+                .y = (cart.screen_height - cart.font_height)/2,
+                .text_color = rgb565(red),
+            });
+        }
+        if (stateTick > 50 and cart.controls.start) {
+            reset_game();
+            gameState = .intro;
+            stateTick = 0;
+        }
+        for (cart.neopixels) |*np| {
+            if (rand_float() > 0.8) {
+                np.* = black;
+            } else if (rand_float() > 0.8) {
+                np.* = dark_red;
+            }
+        }
+    } else {
+        if (stateTick > 50 and cart.controls.select) {
+            reset_game();
+            gameState = .intro;
+            stateTick = 0;
+        }
+        tick_game();
+        if (player.health == 0) {
+            gameState = .game_over;
+            stateTick = 0;
+            return;
+        }
+        tick_game();
+        if (player.health == 0) {
+            gameState = .game_over;
+            stateTick = 0;
+            return;
+        }
+        draw_game();
+    }
+}
+
+fn tick_game() void {
+    tick_stars();
+    tick_bullets();
     tick_enemies();
+    tick_player();
+}
+
+fn draw_game() void {
+    set_background();
+    draw_stars();
     draw_enemies();
     draw_player();
     draw_bullets();
@@ -540,9 +677,5 @@ export fn update() void {
 }
 
 fn set_background() void {
-    if (level == 0 and levelTime % 8 == 0 and levelTime < 40) {
-        @memset(cart.framebuffer, rgb565(white));
-    } else {
-        @memset(cart.framebuffer, rgb565(black));
-    }
+//    @memset(cart.framebuffer, rgb565(black));
 }
