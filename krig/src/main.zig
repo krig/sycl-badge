@@ -392,7 +392,7 @@ fn level_cleared() bool {
 }
 
 fn tick_enemies() void {
-    levelTime += 1;
+    levelTime +%= 1;
     if (levelTime > 100 and level_cleared()) {
         levelTime = 0;
         level += 1;
@@ -458,8 +458,9 @@ fn tick_enemies() void {
                 }
             }
             // remove enemy when exiting the screen
-            if (enemy.x < -5.0) {
+            if (enemy.x < -4.0) {
                 enemy.*.state = .dead;
+                // TODO: swap last enemy with this one
             }
         }
     }
@@ -469,13 +470,13 @@ fn draw_enemies() void {
     for (enemies) |enemy| {
         if (enemy.state == .dead) continue;
         if (enemy.state == .dying) {
-            const hw: f32 = @as(f32, @floatFromInt(enemy.cooldown)) * 0.5;
+            const hw: f32 = @as(f32, @floatFromInt(enemy.cooldown * 2)) * 0.5;
             cart.oval(.{
                 .x = @intFromFloat(enemy.x - hw),
                 .y = @intFromFloat(enemy.y - hw),
-                .width = enemy.cooldown,
-                .height = enemy.cooldown,
-                .stroke_color = rgb565(white),
+                .width = enemy.cooldown * 2,
+                .height = enemy.cooldown * 2,
+                .stroke_color = rgb565(red),
                 .fill_color = rgb565(white),
             });
         }
