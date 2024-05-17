@@ -105,7 +105,7 @@ const Bullet = struct {
     typ: BulletType,
     live: bool,
 };
-const MaxBullets = 8;
+const MaxBullets = 100;
 var bullets: [MaxBullets]Bullet = undefined;
 
 export fn start() void {
@@ -165,7 +165,11 @@ fn spawn_bullet(bullet: Bullet) void {
     for (&bullets) |*b| {
         if (b.live) continue;
         b.* = bullet;
-        noisy(880.0, 0.1, 100, 0);
+        if (bullet.typ == .dot) {
+            noisy(880.0, 0.1, 100, 0);
+        } else {
+            noisy(440.0, 0.08, 50, 0);
+        }
         break;
     }
 }
@@ -196,6 +200,20 @@ fn tick_bullets() void {
         if (bullet.y > cart.screen_height) bullet.*.live = false;
         if (bullet.x < 0) bullet.*.live = false;
         if (bullet.y < 0) bullet.*.live = false;
+
+        // collide with player
+        if (bullet.x > player.x and bullet.x < player.x + 8 and
+            bullet.y > player.y - 1 and bullet.y < player.y + 1) {
+            bullet.*.live = false;
+
+            if (player.health > 0) {
+                player.health -= 1;
+                player.score = 0;
+                noisy(220.0, 0.2, 80, 1);
+            } else {
+                noisy(440.0, 0.2, 100, 3);
+            }
+        }
     }
 }
 
@@ -430,7 +448,7 @@ fn tick_enemies() void {
             enemy.y = enemy.y + std.math.sin(@as(f32, @floatFromInt(levelTime % 100)) * 0.01) * 0.1;
             // collide with bullets
             for (&bullets) |*bullet| {
-                if (bullet.live) {
+                if (bullet.live and bullet.typ == .dot) {
                     if (bullet.x < enemy.x + hw and bullet.x > enemy.x - hw) {
                         if (bullet.y < enemy.y + hh and bullet.y > enemy.y - hh) {
                             bullet.*.live = false;
@@ -457,6 +475,18 @@ fn tick_enemies() void {
                     }
                 }
             }
+
+            if (level > 1 and rand_float() > 0.975) {
+                spawn_bullet(.{
+                    .x = enemy.x - 5.0,
+                    .y = enemy.y + (EnemyWidth/2),
+                    .dx = -0.8 - (rand_float() * 0.5),
+                    .dy = 0.5 * (rand_float() - 0.5),
+                    .typ = .cross,
+                    .live = true,
+                });
+            }
+
             // remove enemy when exiting the screen
             if (enemy.x < -4.0) {
                 enemy.*.state = .dead;
@@ -480,27 +510,46 @@ fn draw_enemies() void {
                 .fill_color = rgb565(white),
             });
         }
+        const colors = [_]cart.NeopixelColor{ ziggy6, purp, green, zig };
+        const clr = rgb565(colors[level % colors.len]);
         if (enemy.state == .live) {
-            cart.rect(.{
+            cart.hline(.{
                 .x = @intFromFloat(enemy.x - EnemyWidth/2),
-                .y = @intFromFloat(enemy.y + EnemyWidth/2),
-                .width = EnemyWidth + 1,
-                .height = 2,
-                .fill_color = rgb565(ziggy6),
+                .y = @intFromFloat(enemy.y + EnemyWidth/2 - 1),
+                .len = EnemyWidth,
+                .color = clr,
             });
-            cart.rect(.{
+            cart.hline(.{
                 .x = @intFromFloat(enemy.x - EnemyWidth/2),
                 .y = @intFromFloat(enemy.y - EnemyWidth/2),
-                .width = EnemyWidth + 1,
-                .height = 2,
-                .fill_color = rgb565(ziggy6),
+                .len = EnemyWidth,
+                .color = clr,
+            });
+            cart.vline(.{
+                .x = @intFromFloat(enemy.x - EnemyWidth/2),
+                .y = @intFromFloat(enemy.y - EnemyWidth/2),
+                .len = 3,
+                .color = rgb565(red),
+            });
+            cart.vline(.{
+                .x = @intFromFloat(enemy.x - EnemyWidth/2),
+                .y = @intFromFloat(enemy.y + EnemyWidth/2 - 3),
+                .len = 3,
+                .color = rgb565(red),
+            });
+            cart.rect(.{
+                .x = @intFromFloat(enemy.x + 2),
+                .y = @intFromFloat(enemy.y - EnemyWidth/2),
+                .width = 6,
+                .height = EnemyWidth,
+                .fill_color = clr,
             });
             cart.oval(.{
-                .x = @intFromFloat(enemy.x - 3),
+                .x = @intFromFloat(enemy.x),
                 .y = @intFromFloat(enemy.y - 3),
-                .width = 7,
-                .height = 8,
-                .fill_color = rgb565(ziggy6),
+                .width = 6,
+                .height = 6,
+                .fill_color = rgb565(black),
             });
         }
     }
