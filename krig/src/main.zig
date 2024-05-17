@@ -593,7 +593,7 @@ export fn update() void {
     if (gameState == .intro) {
         set_background();
         tick_stars();
-        tick_stars();
+        if (!cart.isWasm) tick_stars();
         draw_stars();
         draw_intro_text();
         if (stateTick > 50 and cart.controls.start) {
@@ -612,7 +612,7 @@ export fn update() void {
     } else if (gameState == .game_over) {
         set_background();
         tick_stars();
-        tick_stars();
+        if (!cart.isWasm) tick_stars();
         draw_stars();
         const gameOver = "GAME OVER";
         if (rand_float() < 0.8) {
@@ -647,11 +647,13 @@ export fn update() void {
             stateTick = 0;
             return;
         }
-        tick_game();
-        if (player.health == 0) {
-            gameState = .game_over;
-            stateTick = 0;
-            return;
+        if (!cart.isWasm) {
+            tick_game();
+            if (player.health == 0) {
+                gameState = .game_over;
+                stateTick = 0;
+                return;
+            }
         }
         draw_game();
     }

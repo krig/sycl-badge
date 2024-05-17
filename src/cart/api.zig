@@ -69,6 +69,7 @@ pub const Controls = packed struct(u9) {
 
 const base = if (builtin.target.isWasm()) 0 else 0x20000000;
 
+pub const isWasm: bool = builtin.target.isWasm();
 pub const controls: *Controls = @ptrFromInt(base + 0x04);
 pub const light_level: *u12 = @ptrFromInt(base + 0x06);
 pub const neopixels: *[5]NeopixelColor = @ptrFromInt(base + 0x08);

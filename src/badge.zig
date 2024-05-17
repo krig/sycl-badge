@@ -38,6 +38,7 @@ const led_pin = board.D13;
 const Lcd = board.Lcd;
 const ButtonPoller = board.ButtonPoller;
 const light_sensor_pin = microzig.board.A7_LIGHT;
+const battery_voltage = microzig.board.A6_VMEAS;
 const audio = board.audio;
 
 const adc = hal.adc.num(0);
